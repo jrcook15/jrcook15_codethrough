@@ -1,0 +1,62 @@
+---
+title: 'Lab Code Through - Dummy Variables'
+author: "Justeen Cook"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    theme: cerulean
+    highlight: haddock
+---
+
+
+A new package I recently found was "fastDummies", it makes creating categorical variables into dummy variables quick and painless.  
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, warning=F)
+
+library(fastDummies)
+
+```
+
+To learn a little more about this package, load the data file from the final lab of CPP524.  
+
+```{r}
+URL <- "https://raw.githubusercontent.com/DS4PS/cpp-524-spr-2020/master/labs/data/np-comp-data.csv"
+dat <- read.csv( URL, stringsAsFactors=F ) 
+```
+
+In the original dataset, gender was listed as male or female, while R can automatically run regressions on binary variables, you may want to set your own dummy variable for variables that have more than two options such as non-profit type.  By creating a dummy variable column for non-profit type, we can isolate the most frequest non-profit and assess if the type of non-profit impacts salaries.  Notice in this data frame we have 19 variables.
+
+```{r}
+head(dat, n=10 )
+
+```
+
+To create dummy variables, start by creating a new dataframe, for this example it will be called 'newdat'.  We are then going to call the function dummy_columns (you can also use dummy_cols) and direct it to pull from our original data set 'dat'.  Because we are only changing one categorical column to a dummy variable column we will change select_columns to = "NTMAJ12" from our original data set.  we are now asking R to create a dummy variable for each of the non-profit types and assign a  1 for yes, it is this type of non-profit, or 0 if it is not.  This now creates 30 variables.
+
+```{r}
+newdat <- dummy_columns(dat, select_columns = "NTMAJ12" , remove_first_dummy = FALSE,
+  remove_most_frequent_dummy = FALSE, ignore_na = FALSE,
+  split = NULL, remove_selected_columns = TRUE)
+head(newdat, n=10)
+```
+
+To compare our new dummy variables, lets first look at a naive model of salary and gender.
+
+```{r}
+naivemodel <- lm(SALARY ~ GENDER, data = newdat)
+summary(naivemodel)
+```
+
+
+
+To observe how you can use the dummy variables, I am showing a very basic coefficient comparision of Male verse female salaries within non-profit agencies below and how working in the health non-profits changes that salary.  In this case the intercept is the female average salary for all other non-profits, and the coeffiecent NTMAJ12_HE shows working in a Health non-profit for a female will raise the average salary by $22k up to appx $112k, however men will be over $160k in the same type of non-profit.
+
+
+```{r}
+model2 <- lm(SALARY ~ NTMAJ12_HE + GENDER , data = newdat)
+summary(model2)
+```
+
+While this new model didn't improve the naive model, I hope this gives you some ideas about the types of categorical data you can setup as dummy variables in future to complete other regression models.
